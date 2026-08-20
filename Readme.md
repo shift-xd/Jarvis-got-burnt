@@ -1,5 +1,16 @@
-<img width="839" height="63" alt="image" src="https://github.com/user-attachments/assets/2c4b551a-37e5-4f95-8274-3478fff674ae" />
+<img width="438" height="84" alt="image" src="https://github.com/user-attachments/assets/edf40e43-ad4c-4a50-baea-3ba00d062797" />
 
 
-Make of a Oled Desk Robot that i have built from scratchh :yay 
+
+
+
+
+### The Workings ! Aka Software 
+
+
+
+
+Make of a Oled Desk Robot that i have built from scratch :yay 
+
+
 
