@@ -1,487 +1,319 @@
+<div align="center">
+
 <img width="438" height="84" alt="Jarvis - Burnt To A Crisp" src="https://github.com/user-attachments/assets/edf40e43-ad4c-4a50-baea-3ba00d062797" />
+
+# **JARVIS — BURNT TO A CRISP 🔥**
+
+</div>
+
+Made a lil OLED desk robot thingy from scratch :yay
+
+It sits on my desk, shows the time, does animations, runs timers, has alarms/reminders and has a whole web interface hosted by the ESP32 because apparently just making a clock wasn't enough lmao
+
+<div align="center">
 
 <img width="640" height="360" alt="Jarvis demo" src="https://github.com/user-attachments/assets/698d28e2-11c0-439c-8b25-8087b33e968d" />
 
-# Jarvis - Burnt To A Crisp 🔥
+</div>
 
-An **under-monitor OLED desk display / productivity companion** built from scratch around an ESP32.
+## Table of Contents
 
-The idea started pretty simple: I wanted a tiny thing on my desk that could show useful information without needing a phone or a giant screen. Then, obviously, I kept adding stuff until it became this :yay
-
-> **Time + animations + timers + reminders + alarms + a web app + a custom 3D printed enclosure + custom PCB**
-
-This repository is meant to be the all-inclusive documentation for the project — from the original idea and electronics to the firmware, web interface, enclosure and the weird problems I had to solve while building it.
-
----
-
-## What does it actually do?
-
-Jarvis is basically a small always-visible desk companion.
-
-### ⏰ Time display — without an RTC
-
-One of the fun parts of this project is that there is **no dedicated RTC module**.
-
-Instead, Jarvis connects to Wi-Fi and gets the current time using **NTP (Network Time Protocol)**. Once the time has been obtained, the ESP32 keeps counting the time internally, so the display can continue working even if the Wi-Fi connection disappears afterwards.
-
-That means:
-
-- No RTC module required
-- Wi-Fi is used for initial time synchronisation
-- The ESP32 keeps the clock running internally afterwards
-- The OLED can keep showing time even after the network drops
+- [Softwares](#softwares)
+- [How To Make](#how-to-make)
+- [The Workings Aka Software](#the-workings-aka-software)
+- [Firmware](#firmware)
+- [PCB && Schematics](#pcb--schematics)
+- [Casing](#casing)
+- [Features](#features)
+- [Macondo](#macondo)
 
 ---
 
-## ✨ Features
+## Softwares
 
-### 🕐 Clock
+<div align="center">
 
-- Digital time display
-- NTP-based time synchronisation
-- No RTC module
-- Continues keeping time after Wi-Fi disconnects
+<a href="https://www.arduino.cc/" target="_blank"><img src="https://img.shields.io/badge/Arduino-00878F?style=for-the-badge&logo=arduino&logoColor=white" alt="Arduino"></a>
+<a href="https://www.freecad.org/" target="_blank"><img src="https://img.shields.io/badge/FreeCAD-333333?style=for-the-badge&logo=freecad&logoColor=white" alt="FreeCAD"></a>
+<a href="https://solvespace.com/" target="_blank"><img src="https://img.shields.io/badge/SolveSpace-333333?style=for-the-badge" alt="SolveSpace"></a>
+<a href="https://easyeda.com/" target="_blank"><img src="https://img.shields.io/badge/EasyEDA-1769FF?style=for-the-badge&logo=easyeda&logoColor=white" alt="EasyEDA"></a>
 
-### 🎞️ Animations
+</div>
 
-The OLED isn't just a boring status screen.
+## How To Make
 
-There are multiple small animations designed to make the device feel alive and fun to look at. The display can switch between different visual states and animations instead of permanently showing the same screen.
+This is a PCB + firmware + casing project so basically you get all the fun parts :skull:
 
-### ⏱️ Productivity timers
+Get the PCB made, get the components, solder everything together, flash the firmware and shove it into the casing hehe boi.
 
-Jarvis has timers for different things I actually wanted to keep track of:
+The whole point was to make the final thing from scratch instead of buying some random smart display.
 
-- General productivity / work sessions
-- Macondo hours
-- Cat cuddle hours 🐈
-- IELTS task timing
-- Custom alarms / reminders
-
-So instead of opening another app just to start a timer, the thing sitting on my desk can do it.
-
-### 🌐 Web app
-
-This is probably the biggest part of the software side.
-
-Jarvis has its own small web interface hosted directly by the ESP32.
-
-The setup works roughly like this:
+The general build is:
 
 ```text
-             Home Wi-Fi
-                  │
-                  ▼
-             ┌─────────┐
-             │  ESP32  │
-             └────┬────┘
-                  │
-                  │ hosts web interface
-                  ▼
-        ┌────────────────────┐
-        │  THA PRODUCTIVE    │
-        │       TIMER        │
-        │    Web Interface   │
-        └────────────────────┘
-                  │
-                  ▼
-          Controls / Timers
-                  │
-                  ▼
-               OLED
+ESP32 + OLED
+     ↓
+Solder / test
+     ↓
+Custom PCB
+     ↓
+Flash firmware
+     ↓
+Make the casing
+     ↓
+Put everything together
+     ↓
+Njoyy :yay
 ```
-
-The ESP32 can create an access point named:
-
-**`THA PRODUCTIVE TIMER`**
-
-You connect to it and the web interface can be used to control the device.
-
-The goal was to make the device usable without needing a dedicated phone application.
 
 ---
 
-# 🧠 The Workings — Aka Software
+## The Workings Aka Software
 
-The software is basically split into a few jobs that all run together on the ESP32.
+The ESP32 is basically doing everything here.
+
+It handles the OLED, Wi-Fi, time, timers, animations and the web interface.
 
 ```text
-                     ┌───────────────────┐
-                     │       ESP32       │
-                     │                   │
-                     │  Main Application │
-                     └─────────┬─────────┘
-                               │
-          ┌────────────────────┼────────────────────┐
-          │                    │                    │
-          ▼                    ▼                    ▼
-   ┌─────────────┐      ┌─────────────┐      ┌─────────────┐
-   │ Time / NTP  │      │   Timers    │      │  Web Server │
-   └──────┬──────┘      └──────┬──────┘      └──────┬──────┘
-          │                    │                    │
-          └────────────────────┼────────────────────┘
-                               │
-                               ▼
-                      ┌────────────────┐
-                      │ OLED Renderer  │
-                      │ + Animations   │
-                      └────────────────┘
+                    ESP32
+                      │
+        ┌─────────────┼─────────────┐
+        │             │             │
+        ▼             ▼             ▼
+      NTP           Timers       Web Server
+        │             │             │
+        └─────────────┼─────────────┘
+                      ▼
+                 OLED Display
+                      │
+                      ▼
+                  Animations
 ```
 
-The ESP32 is responsible for the actual logic instead of relying on another computer to run the application.
+### The clock thingy
 
-The OLED is essentially the output layer, while the web interface gives another way to interact with the same timers and settings.
+There isn't an RTC module in this :D
 
----
+The ESP32 gets the time from **NTP over Wi-Fi** and then keeps track of the time itself afterwards.
 
-# 🖥️ Display
-
-The project uses a small monochrome OLED as the main display.
-
-The screen is intentionally small because the whole point of Jarvis is to have something that can sit underneath / beside a monitor without becoming another giant screen on the desk.
-
-The display is used for:
-
-- Time
-- Timer information
-- Reminders
-- Status information
-- Animations
-
-The animations were also designed around the limitations of a tiny monochrome OLED rather than trying to make it behave like a normal graphical display.
-
----
-
-# 🔌 Hardware
-
-The main controller is an **ESP32**.
-
-The hardware stack consists of:
-
-| Part | Purpose |
-| --- | --- |
-| ESP32 | Main microcontroller, Wi-Fi and web server |
-| OLED display | Main visual interface |
-| Custom PCB | Holds the electronics together cleanly |
-| 3D printed enclosure | Physical housing for the electronics |
-| USB power | Powers the device |
-
-The project deliberately avoids unnecessary hardware where software can do the job. The best example is the clock: instead of adding an RTC, the ESP32 gets time from NTP and keeps counting internally.
-
----
-
-# 🧩 PCB + Schematics
-
-I also made a PCB and schematic for the project.
-
-The PCB isn't strictly necessary for making a working version — you could build the electronics on a perfboard / protoboard — but I wanted to make an actual PCB for the final build.
-
-The design process was:
+So basically:
 
 ```text
-Idea
-  ↓
-Choose components
-  ↓
-Make schematic
-  ↓
-Design PCB
-  ↓
-Solder electronics
-  ↓
-Test firmware
-  ↓
-Design enclosure around the electronics
+Wi-Fi → NTP → Get time → ESP32 keeps counting → OLED
 ```
 
-The PCB was mainly about making the final build cleaner and more compact.
+Which saved me from having to add another chip just to tell the time lol.
 
----
+### The web thingy
 
-# 🧱 The enclosure
+The ESP32 also hosts the web interface itself.
 
-The enclosure went through multiple iterations because apparently making a box around electronics is not as easy as making a box 💀
-
-I originally made a simple rectangular enclosure, but that was pretty boring, so I moved on to a more custom design.
-
-I started with **SolveSpace** and later moved to **FreeCAD** for the more complicated enclosure work.
-
-The final workflow involved:
-
-- Designing the enclosure around the actual electronics
-- Adding internal walls so the ESP32 couldn't just wander around inside the case lol
-- Separating the lid from the main body
-- Designing a sliding / removable mechanism
-- Tweaking clearances
-- Slicing the model
-- 3D printing it
-- Fixing print failures
-- Re-printing the final version
-
-There were also a couple of failed prints caused by things like power loss, incorrect filament settings and spacing issues.
-
-Eventually the final casing worked and the electronics were moved into it.
-
----
-
-# 🛠️ Build process
-
-This project was built in stages rather than magically appearing as the final thing.
-
-### 1. Electronics
-
-I first selected the ESP32 and OLED and made the basic connections.
-
-### 2. Schematic
-
-Then I made the schematic and figured out how everything should connect.
-
-### 3. PCB
-
-After that I designed a custom PCB for the final build.
-
-### 4. First firmware
-
-The first firmware was intentionally basic. It was mainly there to prove that the hardware, display and ESP32 were working correctly.
-
-### 5. Animations
-
-Once the basic display worked, I started adding animations and making the device feel less like a development board and more like an actual product.
-
-### 6. Timers + reminders
-
-Then came the useful stuff: timers, alarms, Macondo tracking, cat cuddle tracking and IELTS timing.
-
-### 7. Web interface
-
-After that I built the ESP32-hosted web app so the device could be controlled without needing another dedicated application.
-
-### 8. Enclosure
-
-Finally, I designed and printed the enclosure around the electronics.
-
----
-
-# 📡 How the networking works
-
-The networking side has two important jobs:
-
-### Time synchronisation
-
-```text
-ESP32
-  │
-  ├── Connect to Wi-Fi
-  │
-  ├── Contact NTP server
-  │
-  ├── Get current time
-  │
-  └── Keep counting internally
-```
-
-### Device control
-
-```text
-Phone / Laptop
-       │
-       │ Wi-Fi
-       ▼
-     ESP32
-       │
-       ├── Web server
-       ├── Timer logic
-       └── OLED output
-```
-
-The idea is that the ESP32 itself is the computer running the whole thing.
-
----
-
-# 🌐 Web App
-
-The web app is served by the ESP32 itself instead of requiring a cloud backend.
-
-This keeps the project relatively self-contained:
-
-- No external server required for the controls
-- No separate mobile application
-- No cloud dashboard
-- The ESP32 handles the web interface
-- The same device also handles the display and timers
-
-The access point is named:
+The device can create a Wi-Fi network called:
 
 ```text
 THA PRODUCTIVE TIMER
 ```
 
-From there the user can open the hosted interface and interact with the device.
+You connect your phone/laptop to it and use the web interface to interact with the timers and stuff.
+
+No separate app. No cloud server. Just the lil ESP32 doing its thing.
 
 ---
 
-# ⏲️ Timer system
+## Firmware
 
-The timer system is one of the main reasons I built Jarvis in the first place.
+The firmware is where most of the actual JARVIS brain lives.
 
-Instead of having a generic countdown timer, I wanted timers that actually represented things I was doing.
+It handles:
 
-Current uses include:
+- OLED rendering
+- Animations
+- Clock
+- NTP synchronisation
+- Timers
+- Alarms / reminders
+- Wi-Fi
+- Web server
+- Timer controls
 
-| Timer | Why it exists |
-| --- | --- |
-| Macondo | Track project/build time |
-| Cat cuddle | Track cuddle time because why not 🐈 |
-| IELTS | Keep track of IELTS-related tasks |
-| Productivity | General focused work |
-| Alarms | Reminders for things I need to do |
+The idea was to keep the device mostly self contained so once it's powered up it can just sit there and do its thing.
 
-This also makes the device useful as a little productivity companion rather than just an under-monitor clock.
+> Firmware files / source are kept in the repo alongside the hardware files.
 
 ---
 
-# 📦 Repository structure
+## Features
 
-The project is intended to keep the different parts of the build together:
+### 🕐 Clock
+
+A tiny always-visible clock because opening my phone every time I wanted to know the time felt stupid.
+
+Uses NTP instead of an RTC.
+
+### 🎞️ Animations
+
+The OLED has little animations and visual states so it doesn't just sit there showing boring text 24/7.
+
+### ⏱️ Productivity timers
+
+Some of the timers I made specifically for things I actually do:
+
+- Productivity
+- Macondo
+- IELTS
+- Cat cuddle time 🐈
+- Alarms / reminders
+
+Yes, the cat timer is real.
+
+### 🌐 Web interface
+
+A browser based interface served directly from the ESP32.
+
+This lets the device be controlled without making a whole separate phone app.
+
+---
+
+## PCB && Schematics
+
+The electronics are on a custom PCB because obviously I wasn't going to leave the final version as a pile of jumper wires :skull:
+
+### PCB
+
+<div align="center">
+
+<!-- Put the final PCB screenshot here -->
+
+</div>
+
+### Schematic
+
+<div align="center">
+
+<!-- Put the final schematic screenshot here -->
+
+</div>
+
+The PCB basically brings the ESP32 + OLED + the rest of the electronics together into one nice lil board.
+
+---
+
+## Casing
+
+The casing was one of the parts that took wayyy more time than expected.
+
+I used **SolveSpace** and **FreeCAD** while designing it and had to iterate on the dimensions around the actual PCB.
+
+There were some failed prints, spacing problems and other silly things along the way :skull:
+
+The workflow was basically:
 
 ```text
-Jarvis-got-burnt/
-│
-├── README.md              ← You are here
-│
-├── Firmware/              ← ESP32 firmware
-├── WebApp/                ← ESP32-hosted web interface
-├── PCB/                   ← PCB + schematic files
-├── Enclosure/             ← 3D model / CAD files
-├── Production/            ← Manufacturing / exported files
-└── Assets/                ← Photos, videos and documentation
+Design
+  ↓
+Print
+  ↓
+Doesn't fit
+  ↓
+Cry
+  ↓
+Change dimensions
+  ↓
+Print again
+  ↓
+IT FITS :yay
 ```
 
-> The repository started as a very small documentation repo, so some of these sections represent the logical parts of the project rather than files that were present from the very first commit.
+The final enclosure was made to hold the electronics properly instead of just being a random box around it.
 
 ---
 
-# 🧪 Things I had to figure out
+## Build
 
-This project was also basically a giant excuse to learn a bunch of stuff.
+This project went through a bunch of little stages before becoming the final thing.
 
-Some of the bigger learning points were:
+### 1. OLED + ESP32
 
-- ESP32 firmware development
+First I got the basic display working.
+
+### 2. Firmware
+
+Then I started making the clock, animations and other software stuff.
+
+### 3. Timers
+
+Added the productivity / Macondo / IELTS / cat timers and alarms.
+
+### 4. Web app
+
+Made the ESP32 host its own web interface.
+
+### 5. PCB
+
+Designed the actual board for the final build.
+
+### 6. Casing
+
+Designed and printed the enclosure around the electronics.
+
+### 7. Put everything together
+
+And boom. Tiny desk thing.
+
+---
+
+## Hardware
+
+| Thing | What it does |
+| --- | --- |
+| ESP32 | Brain + Wi-Fi + web server |
+| OLED | Shows everything |
+| Custom PCB | Holds the electronics |
+| 3D printed case | Makes it look like an actual thing |
+| USB | Power |
+
+The hardware is intentionally pretty simple. Most of the complicated behaviour is done in software.
+
+---
+
+## Macondo
+
+This project was made as part of **Hack Club Macondo**!
+
+I documented the build process there, including the hardware, software, PCB, enclosure and all the stuff that inevitably went wrong while making it :skull:
+
+**Project:** https://macondo.hackclub.com/projects/9875
+
+---
+
+## Random stuff I learnt making this
+
+- ESP32 firmware
 - OLED graphics
-- Animation on a small monochrome display
-- NTP time synchronisation
-- Maintaining time without an RTC
+- NTP
 - Embedded web servers
-- Wi-Fi access points
-- Web interfaces for microcontrollers
-- Timer / alarm logic
+- Wi-Fi APs
+- Timer logic
 - PCB design
-- Schematic design
 - Soldering
 - FreeCAD
-- 3D modelling for real hardware
-- 3D printer settings
-- Designing around real-world tolerances
-- Debugging hardware + software together
+- SolveSpace
+- 3D printing
+- Designing around actual hardware tolerances
+- Debugging hardware + software at the same time
 
-The enclosure especially took a few attempts before I got something that actually worked.
+And probably most importantly:
 
----
+**Don't design the enclosure before you know the exact size of your PCB.**
 
-# 🚧 Limitations / things to know
-
-This isn't a commercial product and there are definitely compromises.
-
-- The clock is not backed by a dedicated RTC.
-- Accurate initial time requires network time synchronisation.
-- The OLED is intentionally small.
-- The device is designed around an ESP32 and its available resources.
-- The enclosure went through multiple iterations and is very much a custom DIY design.
-- A PCB is used for the final build, but a perfboard / protoboard build would also be possible.
-
-Basically: it is a tiny homemade desk device, not a production smart display :lol
+I learnt that one the hard way :skull:
 
 ---
 
-# 📸 Build / project media
+<div align="center">
 
-### Final project
+### Made from scratch by **Jarvis_On_Fire** 🔥
 
-<img width="438" height="84" alt="Jarvis project" src="https://github.com/user-attachments/assets/edf40e43-ad4c-4a50-baea-3ba00d062797" />
+**Njoyy :yay**
 
-### Demo
-
-<img width="640" height="360" alt="Jarvis demo" src="https://github.com/user-attachments/assets/698d28e2-11c0-439c-8b25-8087b33e968d" />
-
-More build photos, enclosure iterations and videos are documented in the Hack Club Macondo project journal.
-
-**Macondo project:** https://macondo.hackclub.com/projects/9875
-
----
-
-# 📖 Build journal
-
-The actual build journal is probably the best way to see how this project evolved because the final version hides how many things went wrong before it worked.
-
-I documented:
-
-- The initial schematic
-- PCB design
-- Soldering and wiring
-- Early firmware
-- Enclosure experiments
-- Failed 3D prints
-- FreeCAD learning
-- The final enclosure
-- Firmware features
-- Web app development
-- Time synchronisation
-- Timers and alarms
-
-👉 **Full Macondo journal:** https://macondo.hackclub.com/projects/9875
-
----
-
-# 🙌 Why I made this
-
-I wanted a tiny thing for my desk that was actually useful.
-
-Something that could sit there quietly, show the time, run a timer, remind me about something, show a stupid little animation every now and then and be controllable from a browser.
-
-Instead of buying one, I decided to build it from scratch.
-
-And then, as usual, the project got way bigger than the original idea :yay
-
----
-
-# 🔥 Project status
-
-**Status:** Built / working
-
-**Platform:** ESP32
-
-**Display:** Small monochrome OLED
-
-**Connectivity:** Wi-Fi
-
-**Interface:** OLED + ESP32-hosted web app
-
-**Timekeeping:** NTP + internal timekeeping
-
-**Enclosure:** Custom 3D printed
-
-**PCB:** Custom designed
-
-**Project level:** Hardware — Level 2 on Macondo
-
----
-
-## Credits / links
-
-- **Hack Club Macondo project:** https://macondo.hackclub.com/projects/9875
-- **Repository:** https://github.com/shift-xd/Jarvis-got-burnt
-
-Made from scratch by **_Jarvis_On_Fire_**.
-
-:yay
+</div>
