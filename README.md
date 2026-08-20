@@ -9,8 +9,9 @@
    <div align="center">
 <img width="1020" height="509" alt="image" src="https://github.com/user-attachments/assets/2dc7673d-7c7f-45d1-9e2d-e861bc5cddf6" />
    </div>
+     <div align="center">
 <img width="320" height="180" alt="marsk-ezgif" src="https://github.com/user-attachments/assets/7b1a2567-6671-402a-a15c-5e5a1b3a589d" />
-
+   </div>
 
 
 
